@@ -1,0 +1,21 @@
+server {
+    listen 8000;
+    root /usr/share/nginx/html;
+    index index.html;
+
+    add_header Cache-Control "no-cache";
+
+    # API ueber dieselbe Adresse wie das Frontend, so braucht das Backend keinen eigenen oeffentlichen Port.
+    # Der Backend-Host kommt aus BACKEND_URL und wird erst bei der Anfrage aufgeloest, damit das Frontend auch ohne Backend startet.
+    # Eine Antwort mit mehreren Recherche-Runden kann einige Minuten dauern.
+    location /api/ {
+        resolver 127.0.0.11 valid=10s ipv6=off;
+        set $backend ${BACKEND_URL};
+        rewrite ^/api/(.*)$ /$1 break;
+        proxy_pass $backend;
+        # Der Stream der Antwort (Statuszeilen) soll sofort ankommen
+        proxy_buffering off;
+        proxy_read_timeout 600s;
+        proxy_send_timeout 600s;
+    }
+}

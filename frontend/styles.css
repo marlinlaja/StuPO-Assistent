@@ -1,0 +1,1800 @@
+/* StuPO-Assistent: drei Spalten (Dokumente, PDF, Assistent), Inhalte in Zeilen getrennt durch feine Linien, kaum Rundungen,
+   ein Akzent (RWTH-Blau). Schrift- und Symbolgrößen, Textfarben und Linien kommen aus den Variablen in :root. */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+
+
+/* --- Schrift --- */
+
+/* Geist (Vercel, SIL Open Font License, Lizenztext in fonts/OFL.txt), selbst ausgeliefert statt von Google geladen */
+@font-face {
+  font-family: "Geist";
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: swap;
+  src: url("fonts/geist-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: "Geist";
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: swap;
+  src: url("fonts/geist-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+
+
+/* --- Gestaltung --- */
+
+:root {
+  /* Flächen und Linien */
+  --bg: #ffffff;
+  --bg-soft: #fafafa;
+  --bg-hover: #f4f4f5;
+  --canvas: #efefef;
+  --line: #d4d4d4;
+  --line-strong: #d4d4d4;
+  --line-width: 1px;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --fill: #e9ebee;
+  --fill-hover: #dfe2e6;
+
+  /* Text */
+  /* Textfarben: drei Rollen. --text für Inhalt und Namen, --text-muted für Zweitrangiges (Beschriftungen, Hinweise, Knöpfe im
+     Ruhezustand), --text-faint für Drittrangiges (Zähler, Trennzeichen, Platzhalter-ähnliche Angaben). Beim Darüberfahren
+     wird --text-muted zu --text. */
+  --text: #111111;
+  --text-muted: #737373;
+  --text-faint: #a8a8a8;
+
+  /* Akzent: RWTH-Blau */
+  --accent: #00549f;
+  --accent-hover: #00437f;
+  --accent-active: #00305a;
+  --accent-soft: #edf3fa;
+  --accent-soft-active: #dce8f6;
+  --focus-ring: 0 0 0 2px rgba(0, 84, 159, 0.3);
+  --danger: #c8372d;
+
+  /* Form */
+  --radius: 3px;
+  --row-padding: 14px 20px;
+  --bar-height: 52px;
+  /* Größenkonzept für kleine Bedienelemente: Toolbar des PDFs, Marken im Kontext, ältere Fassungen in der Liste */
+  --ui-height: 26px;
+
+  /* Schriftgrößen: drei Stufen für die ganze Oberfläche. s = alles Zweite (Marken, Toolbar, Zeilen, Überschriften der Gruppen,
+     Hinweise), m = alles Hauptsächliche (Chat, Eingabe, Namen, Knöpfe), l = der Titel oben links. */
+  --font-s: 12px;
+  --font-m: 14px;
+  --font-l: 16px;
+  /* Symbolgrößen: zwei Stufen. s in Marken, Toolbar und Knöpfen, m bei Haken, Pfeilen und dem Token-Ring. */
+  --icon-s: 14px;
+  --icon-m: 16px;
+  --arrow-size: 30px;
+  /* Abstand der Einklappfeile nach oben und zur Seite ist gleich */
+  --arrow-inset: calc((var(--bar-height) - var(--arrow-size)) / 2);
+  --font: Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+
+  /* Markierungen (Zitate im PDF und im Chat): eine flache Farbe, ohne Verlauf und Rand */
+  --highlight-color: #ffd53d;
+  --highlight-opacity: 0.7;
+  /* Suchtreffer im PDF sind blau, damit sie sich von den Belegen unterscheiden */
+  --search-hit: rgba(111, 177, 245, 0.5);
+  --search-hit-current: rgba(40, 110, 220, 0.55);
+  /* Farbe je Art eines Belegs, blass und in Standardfarben: Grün = belegt (sicher), Gelb = abgeleitet (prüfen), Blau =
+     Hinweis ohne Quelle (neutral, eine Einordnung), Rot = die Antwort nannte eine Quelle, ein Zitat dazu wurde aber nicht
+     gefunden (prüfen). Im Chat gelten die hellen Töne (-soft). Im PDF werden nur belegt und abgeleitet markiert, dort etwas
+     kräftiger, weil die Markierung halbtransparent liegt. */
+  --kind-belegt: #86cfa1;
+  --kind-belegt-soft: #d9efe0;
+  --kind-abgeleitet: #f2d96a;
+  --kind-abgeleitet-soft: #fbf1c9;
+  --kind-hinweis-soft: #dce8f8;
+  --kind-nicht-gefunden-soft: #f8dada;
+  --highlight-radius: 5px;
+  --highlight-sweep: 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  --highlight-stagger: 70ms;
+  --citation-in: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  --citation-out: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  display: flex;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  /* Ziffern gleich breit, damit Zahlen wie 09/2025 oder 12,3 s in Spalten ruhig untereinander stehen */
+  font-variant-numeric: tabular-nums;
+  font-size: var(--font-m);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  font-size: var(--font-m);
+  font-weight: 600;
+}
+
+.hint {
+  color: var(--text-muted);
+}
+
+/* Schmale, dezente Scrollbars. Die scrollenden Bereiche reservieren den Platz der Scrollbar immer, damit nichts
+   springt, sobald ein Inhalt überläuft (auch die Breite des PDFs bleibt so gleich). */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+
+.pane-body,
+.messages,
+.context-documents,
+.source-picker,
+.pdf-container,
+textarea {
+  scrollbar-gutter: stable;
+}
+
+@supports not (scrollbar-width: thin) {
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    border-radius: 4px;
+    background: var(--line-strong);
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
+
+
+
+/* --- Formularelemente --- */
+
+button,
+select,
+input,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+/* Bedienelemente lassen sich nicht aus Versehen markieren (schnelles Klicken markiert sonst den Text daneben). Antworten,
+   Quellen, Eingabefelder und der Text im PDF bleiben markierbar. */
+button,
+summary,
+select,
+label,
+#document-list,
+.brand,
+.pdf-title,
+.pdf-tool-group > span,
+.chat-header,
+.context-documents,
+.composer-bar,
+.chat-legend,
+.divider {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+input,
+textarea {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+button:focus-visible,
+select:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+/* Auswahl wie eine Tabellenzelle: ohne Rahmen, mit kleinem Pfeil, beim Darüberfahren hinterlegt */
+select {
+  width: 100%;
+  height: 34px;
+  padding: 0 28px 0 10px;
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath d='M2.5 3.8L5 1.6l2.5 2.2M2.5 6.2L5 8.4l2.5-2.2' fill='none' stroke='%23737373' stroke-width='1.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 10px center;
+  font-weight: 500;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+select:hover {
+  background-color: var(--bg-hover);
+}
+
+input[type="search"],
+input[type="number"] {
+  height: 30px;
+  border: var(--line-width) solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg);
+  font-size: var(--font-s);
+}
+
+input[type="search"]:focus-visible,
+input[type="number"]:focus-visible {
+  border-color: var(--accent);
+}
+
+/* --- Spalten --- */
+
+/* Jede Spalte beginnt mit einer gleich hohen Leiste, so läuft die Linie durch */
+.brand,
+.chat-header,
+.pdf-toolbar {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 10px;
+  min-height: var(--bar-height);
+  padding: 0 20px;
+  border-bottom: var(--line-width) solid var(--line);
+  background: var(--bg);
+}
+
+.documents {
+  display: flex;
+  flex-direction: column;
+  width: 320px;
+  min-width: 240px;
+  max-width: 460px;
+  background: var(--bg);
+}
+
+.viewer {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 320px;
+  background: var(--canvas);
+}
+
+/* Ohne PDF bleibt oben eine leere Leiste, damit die Linie nicht abreißt */
+.viewer:has(.pdf-viewer[hidden])::before {
+  content: "";
+  flex-shrink: 0;
+  height: var(--bar-height);
+  border-bottom: var(--line-width) solid var(--line);
+  background: var(--bg);
+}
+
+.viewer > .hint {
+  margin: auto;
+  padding: 24px;
+}
+
+.viewer > .hint[hidden] {
+  display: none;
+}
+
+.chat {
+  display: flex;
+  flex-direction: column;
+  width: 420px;
+  min-width: 320px;
+  max-width: 680px;
+  background: var(--bg);
+}
+
+.pane-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* Trenner: eine feine Linie, beim Darüberfahren und Ziehen blau. Die Trefferfläche (::before) und die blaue Linie
+   (::after) haben feste Maße und blenden nur ein, sonst springt die Linie, wenn sich beim Ziehen die Spalten ändern. */
+.divider {
+  position: relative;
+  z-index: 20;
+  flex-shrink: 0;
+  width: var(--line-width);
+  background: var(--line);
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.divider::before {
+  content: "";
+  position: absolute;
+  inset: 0 -4px;
+}
+
+.divider::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 3px;
+  margin-left: -1.5px;
+  background: var(--accent);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s;
+}
+
+.divider:hover::after,
+.divider.active::after {
+  opacity: 1;
+}
+
+.collapsed {
+  display: none !important;
+}
+
+/* Pfeil zum Einklappen sitzt oben in der Leiste der Spalte; eingeklappt bleibt ein Pfeil oben am Rand und holt sie zurück.
+   Der Viewer lässt dann oben Platz, damit der Pfeil nichts überdeckt. */
+.collapse-button:first-child {
+  margin-right: auto;
+}
+
+.brand .collapse-button {
+  margin-left: auto;
+}
+
+/* Dezente Pfeile: nur das Symbol, beim Darüberfahren eine graue Fläche. Wichtig ist die Position (gleicher Abstand nach oben und zur Seite). */
+.collapse-button,
+.expand-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--arrow-size);
+  height: var(--arrow-size);
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius);
+  background: none;
+  color: var(--text-muted);
+  transition: background-color 0.12s, color 0.12s;
+}
+
+.collapse-button:hover,
+.expand-button:hover {
+  background: var(--fill);
+  color: var(--text);
+}
+
+.collapse-button svg,
+.expand-button svg {
+  width: var(--icon-m);
+  height: var(--icon-m);
+}
+
+.expand-button {
+  position: fixed;
+  top: var(--arrow-inset);
+  z-index: 25;
+}
+
+.expand-button[hidden] {
+  display: none;
+}
+
+.expand-button[data-side="left"] {
+  left: var(--arrow-inset);
+}
+
+.expand-button[data-side="right"] {
+  right: var(--arrow-inset);
+}
+
+body.left-collapsed .pdf-toolbar,
+body.left-collapsed .viewer:has(.pdf-viewer[hidden])::before {
+  padding-left: calc(var(--arrow-inset) * 2 + var(--arrow-size));
+}
+
+body.right-collapsed .pdf-toolbar {
+  padding-right: calc(var(--arrow-inset) * 2 + var(--arrow-size));
+}
+
+/* während des Ziehens: nichts markieren, überall der Spalten-Pfeil, das PDF schluckt die Maus nicht */
+body.resizing,
+body.resizing * {
+  user-select: none !important;
+  cursor: col-resize !important;
+}
+
+body.resizing .pdf-viewer {
+  pointer-events: none;
+}
+
+/* Zieht man über die Schwelle hinaus, ist die Spalte beim Ziehen ganz weg und kommt beim Zurückziehen wieder */
+.documents.drag-hidden,
+.chat.drag-hidden {
+  display: none;
+}
+
+
+
+/* --- Dokumente --- */
+
+.brand h1 {
+  font-size: var(--font-l);
+  letter-spacing: -0.01em;
+}
+
+.brand-logo svg {
+  display: block;
+  width: 26px;
+  height: 20px;
+}
+
+.brand {
+  padding-right: var(--arrow-inset);
+}
+
+/* Studiengang und PO als Zeilen: links die Beschriftung, rechts die Auswahl */
+.selectors {
+  display: grid;
+}
+
+.field {
+  display: grid;
+  grid-template-columns: 96px 1fr;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px 8px 20px;
+  border-bottom: var(--line-width) solid var(--line);
+}
+
+.field > span {
+  color: var(--text-muted);
+  font-size: var(--font-s);
+}
+
+#document-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+#document-list ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.group {
+  border-bottom: var(--line-width) solid var(--line);
+}
+
+/* Überschrift der Art: klein und grau, dahinter die Anzahl */
+.group-title {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 28px 20px 10px;
+  color: var(--text);
+  font-size: var(--font-s);
+  font-weight: 600;
+}
+
+.counter {
+  color: var(--text-faint);
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.group-card li + li {
+  border-top: var(--line-width) solid var(--line);
+}
+
+/* Zeilen über die volle Breite; die geöffnete hat einen blauen Streifen links */
+#document-list li[data-id] {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: var(--row-padding);
+  box-shadow: inset 2px 0 0 transparent;
+  transition: background-color 0.12s;
+}
+
+#document-list li[data-id]:hover {
+  background: var(--bg-soft);
+}
+
+#document-list li[data-id].open {
+  background: var(--accent-soft);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+#document-list li[data-id] > span {
+  flex: 1;
+  min-width: 0;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+
+.document-name,
+.document-details {
+  display: block;
+}
+
+.document-name {
+  font-size: var(--font-m);
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.document-details {
+  margin-top: 2px;
+  color: var(--text-muted);
+  font-size: var(--font-s);
+}
+
+.empty-group {
+  padding: 4px 20px 18px;
+  color: var(--text-faint);
+  font-size: var(--font-s);
+}
+
+/* In den Kontext: nur ein Haken im Stil der übrigen Symbole (18 px, Linie 1,9 px, runde Enden), ohne Kasten.
+   Nicht gesetzt blass, gesetzt blau, bei einem Teil der Fassungen ein Strich. */
+#document-list input[type="checkbox"] {
+  flex-shrink: 0;
+  border-radius: 5px;
+  transition: background-color 0.12s;
+  width: 26px;
+  height: 26px;
+  margin: 0;
+  border: 0;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath d='M3.5 8.5l3 3 6-7' fill='none' stroke='%23a8a8a8' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / var(--icon-m) no-repeat;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+#document-list input[type="checkbox"]:hover {
+  background-color: var(--fill);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath d='M3.5 8.5l3 3 6-7' fill='none' stroke='%23737373' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+#document-list input[type="checkbox"]:checked {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath d='M3.5 8.5l3 3 6-7' fill='none' stroke='%2300549f' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+#document-list input[type="checkbox"]:indeterminate {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath d='M4 8h8' fill='none' stroke='%2300549f' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+/* Ältere Versionen: eine eigene Zeile, die die weiteren Zeilen aufklappt; zwischen ihr und dem Hauptdokument steht keine Linie */
+.group-card > .older-versions {
+  border-top: 0;
+}
+
+.older-versions summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  color: var(--text-muted);
+  font-size: var(--font-s);
+  cursor: pointer;
+  list-style: none;
+}
+
+.older-versions summary::-webkit-details-marker {
+  display: none;
+}
+
+.older-versions summary::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform 0.12s;
+}
+
+.older-versions details[open] > summary::before {
+  transform: rotate(45deg);
+}
+
+.older-versions summary:hover {
+  color: var(--text);
+}
+
+/* Ältere Fassungen als Versionsverlauf: kleine, eingerückte Zeilen ohne Linien, das Häkchen rechts */
+#document-list .older-versions ul {
+  position: relative;
+  margin: 0 0 10px;
+}
+
+#document-list li.version-entry {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--ui-height);
+  padding: 0 20px 0 32px;
+  border: 0;
+  border-image: none;
+  background: none;
+  box-shadow: none;
+  font-size: var(--font-s);
+}
+
+#document-list li.version-entry:hover {
+  background: var(--bg-soft);
+}
+
+#document-list li.version-entry.open {
+  background: var(--accent-soft);
+}
+
+#document-list li.version-entry > span {
+  flex: 1;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.version-name {
+  font-weight: 500;
+}
+
+.version-note {
+  margin-left: 8px;
+  color: var(--text-muted);
+}
+
+#document-list li.version-entry input[type="checkbox"] {
+  width: 22px;
+  height: 22px;
+  background-size: var(--icon-m);
+}
+
+
+
+/* Linien in der linken Spalte enden 20 px vor dem Rand der Spalte, so breit wie die Lücke der Eingabe rechts (dort
+   links). Die Scrollbar nimmt davon schon etwas weg, ihre Breite setzt app.js in --scrollbar-width. (Die Linie der
+   Kopfzeile bleibt durchgehend, damit sie in die Leiste des Viewers übergeht.) */
+.field,
+.group,
+.group-card li + li {
+  --line-end: max(0px, calc(20px - var(--scrollbar-width, 0px)));
+  border-image: linear-gradient(to right, var(--line) calc(100% - var(--line-end)), transparent calc(100% - var(--line-end))) 1;
+}
+
+
+
+/* --- PDF-Viewer --- */
+
+.pdf-viewer {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.pdf-viewer[hidden] {
+  display: none;
+}
+
+.pdf-toolbar {
+  flex-wrap: nowrap;
+  letter-spacing: -0.02em;
+  gap: 4px 6px;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+.pdf-toolbar button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: calc(var(--ui-height) - 4px);
+  min-width: calc(var(--ui-height) - 4px);
+  padding: 0 3px;
+  border: 0;
+  border-radius: var(--radius);
+  background: none;
+  color: var(--text-muted);
+  font-size: var(--font-s);
+  white-space: nowrap;
+  transition: background-color 0.12s, color 0.12s;
+}
+
+.pdf-toolbar button:hover {
+  background: var(--fill);
+  color: var(--text);
+}
+
+/* In den Kapseln für Seite und Zoom ist der Hover etwas dunkler */
+.pdf-tool-group:not(.pdf-search-group) button:hover {
+  background: var(--fill-hover);
+}
+
+.pdf-toolbar svg {
+  flex-shrink: 0;
+  width: var(--icon-s);
+  height: var(--icon-s);
+}
+
+/* Pfad zum Dokument: Studiengang / PO / Art / Fassung, die letzte Stelle dunkel */
+.pdf-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: var(--font-s);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.crumb-separator {
+  margin: 0 4px;
+  color: var(--text-faint);
+}
+
+.pdf-title strong {
+  color: var(--text);
+  font-weight: 500;
+}
+
+/* Die Gruppen schrumpfen nicht (sonst werden die Symbole kleiner, wenn die Suche aufklappt); der Pfad kürzt sich stattdessen */
+.pdf-tool-group {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0;
+}
+
+/* Seite und Zoom als kompakte Kapseln: Symbol, Wert, Symbol dicht beieinander */
+.pdf-tool-group:not(.pdf-search-group) {
+  height: var(--ui-height);
+  padding: 0 2px;
+  border-radius: 6px;
+  background: var(--fill);
+}
+
+/* Die zugeklappte Lupe hat dieselbe Größe, aber nur beim Darüberfahren einen Hintergrund */
+.pdf-search-group:not(.open) {
+  height: var(--ui-height);
+  padding: 0 2px;
+  border-radius: 6px;
+  transition: background-color 0.12s;
+}
+
+.pdf-search-group:not(.open):hover {
+  background: var(--fill-hover);
+}
+
+.pdf-search-group:not(.open) button:hover {
+  background: none;
+}
+
+.pdf-toolbar .pdf-zoom-label {
+  width: 44px;
+  padding: 0;
+  font-size: var(--font-s);
+}
+
+/* Seitenzahl als "7 / 12": das Feld sieht aus wie Text */
+#pdf-page-input {
+  width: calc(var(--digits, 1) * 1ch + 8px);
+  height: calc(var(--ui-height) - 4px);
+  padding: 0;
+  border-color: transparent;
+  background: none;
+  font-size: var(--font-s);
+  text-align: right;
+  -moz-appearance: textfield;
+}
+
+#pdf-page-input::-webkit-inner-spin-button,
+#pdf-page-input::-webkit-outer-spin-button {
+  margin: 0;
+  -webkit-appearance: none;
+}
+
+#pdf-page-input:hover {
+  background: var(--fill-hover);
+}
+
+.pdf-tool-group > span {
+  padding: 0 3px 0 0;
+  color: var(--text-muted);
+  font-size: var(--font-s);
+}
+
+/* Die Suche ist erst eine Lupe, mit Klick (oder Strg+F) klappt das Feld auf */
+.pdf-search-group #pdf-search,
+.pdf-search-group .pdf-search-count,
+.pdf-search-group #pdf-search-previous,
+.pdf-search-group #pdf-search-next {
+  display: none;
+}
+
+.pdf-search-group.open {
+  flex-shrink: 1;
+  min-width: 0;
+}
+
+.pdf-search-group.open #pdf-search {
+  display: block;
+}
+
+.pdf-search-group.open .pdf-search-count {
+  display: inline;
+}
+
+.pdf-search-group.open #pdf-search-previous,
+.pdf-search-group.open #pdf-search-next {
+  display: inline-flex;
+}
+
+/* Das Suchfeld ist das Einzige, das bei knappem Platz schrumpft: Pfad und Kapseln bleiben, nichts bricht um */
+#pdf-search {
+  flex: 0 1 150px;
+  min-width: 40px;
+  width: 150px;
+  height: var(--ui-height);
+  font-size: var(--font-s);
+  padding: 0 10px;
+}
+
+.pdf-search-count {
+  white-space: nowrap;
+}
+
+.pdf-stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Beim Wechsel auf ein anderes PDF ist die Arbeitsfläche leer und ein kleines Symbol dreht sich in der Mitte */
+.pdf-loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: none;
+  width: 22px;
+  height: 22px;
+  margin: -11px 0 0 -11px;
+  border: 2px solid var(--line-strong);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: pdf-loading-spin 0.8s linear infinite;
+}
+
+.pdf-viewer.is-loading .pdf-loading {
+  display: block;
+}
+
+.pdf-viewer.is-loading .pdf-container {
+  visibility: hidden;
+}
+
+@keyframes pdf-loading-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* PDF.js verlangt einen absolut positionierten Container, in dem es scrollt */
+.pdf-container {
+  position: absolute;
+  inset: 0;
+  overflow: auto;
+  background: var(--canvas);
+}
+
+/* PDF.js rechnet die Seitengroesse ohne den Rand der Seite (content-box); mit dem globalen border-box
+   wuerden Seite und Markierungen gegen das Bild verrutschen. Die Seite ist ein Blatt auf der Arbeitsfläche. */
+.pdfViewer .page {
+  box-sizing: content-box;
+  margin: 20px auto;
+  border: 0;
+  border-image: none;
+  background-clip: padding-box;
+}
+
+/* Markierung eines Zitats: alle Boxen einer Seite liegen in einer Ebene, die nur einmal halbtransparent ist.
+   So ist die Farbe überall gleich, auch wo sich Boxen berühren. "multiply" laesst den Text darunter lesbar:
+   die Markierung färbt nur das Weiß der Seite, der schwarze Text bleibt schwarz. */
+.citation-highlights {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  mix-blend-mode: multiply;
+  opacity: var(--highlight-opacity);
+}
+
+.citation-highlights[data-kind="belegt"] {
+  --highlight-color: var(--kind-belegt);
+}
+
+.citation-highlights[data-kind="abgeleitet"] {
+  --highlight-color: var(--kind-abgeleitet);
+}
+
+.citation-highlight {
+  position: absolute;
+  border-radius: var(--highlight-radius);
+  background: var(--highlight-color);
+  transform-origin: left center;
+  animation: highlight-sweep var(--highlight-sweep) both;
+  animation-delay: calc(var(--order) * var(--highlight-stagger));
+}
+
+@keyframes highlight-sweep {
+  from { transform: scaleX(0); opacity: 0; }
+  to { transform: scaleX(1); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .citation-highlight { animation: none; }
+  .citation { transition: none; }
+}
+
+/* PDF.js legt die ganze Textebene nur mit 25 % Deckkraft über die Seite, das machte die Suchtreffer blass. Die Ebene hat
+   unsichtbaren Text, deshalb ist volle Deckkraft ok; die Textauswahl bekommt dafür ihre eigene dezente Farbe. */
+.pdf-viewer .textLayer {
+  opacity: 1;
+}
+
+.pdf-viewer .textLayer ::selection {
+  background: rgba(60, 120, 255, 0.28);
+}
+
+/* Suchtreffer im PDF (Strg+F) in derselben Größe wie die Markierung eines Zitats: 3 PDF-Punkte seitlich und
+   1 Punkt oben und unten, mit dem Zoom skaliert (1 PDF-Punkt = 4/3 Pixel bei Zoomfaktor 1). */
+.pdf-viewer .textLayer .highlight {
+  margin: 0 calc(var(--scale-factor, 1) * -4px);
+  padding: calc(var(--scale-factor, 1) * 1.333px) calc(var(--scale-factor, 1) * 4px);
+  border-radius: var(--highlight-radius);
+  background-color: var(--search-hit);
+  mix-blend-mode: multiply;
+  transition: background-color 0.2s;
+}
+
+.pdf-viewer .textLayer .highlight.selected {
+  background-color: var(--search-hit-current);
+}
+
+
+
+/* --- Assistent --- */
+
+.chat-header {
+  justify-content: flex-end;
+  padding-right: var(--arrow-inset);
+  padding-left: var(--arrow-inset);
+}
+
+/* Neuer Chat: ein normaler Knopf im Textsystem (Stufe s, zweitrangig), beim Darüberfahren grau; rechts derselbe Randabstand wie
+   der Einklappknopf links */
+.chat-header #new-chat {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: var(--ui-height);
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--radius);
+  background: none;
+  color: var(--text-muted);
+  font-size: var(--font-s);
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background-color 0.12s, color 0.12s;
+}
+
+.chat-header #new-chat svg {
+  width: var(--icon-s);
+  height: var(--icon-s);
+}
+
+.chat-header #new-chat:hover {
+  background: var(--fill);
+  color: var(--text);
+}
+
+.messages {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  /* Der seitliche Rand gibt der Markierung der Belege Platz, sonst schneidet das Scrollen sie am Rand ab. */
+  padding: 24px 20px 16px 24px;
+}
+
+.message {
+  margin-bottom: 28px;
+  font-size: var(--font-m);
+  line-height: 1.65;
+}
+
+/* Deine Frage: ein grauer Block rechts, in der Farbe der Zoom-Kapseln und Kontext-Marken (--fill) */
+.message.user {
+  width: fit-content;
+  max-width: 88%;
+  margin-left: auto;
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  background: var(--fill);
+  white-space: pre-wrap;
+}
+
+.message :is(p, ul, ol) {
+  margin: 0 0 12px;
+}
+
+.message :is(p, ul, ol):last-child {
+  margin-bottom: 0;
+}
+
+.message li {
+  margin-bottom: 5px;
+}
+
+.message :is(ul, ol) {
+  padding-left: 22px;
+}
+
+.message strong {
+  font-weight: 600;
+}
+
+.message :is(h1, h2, h3, h4) {
+  margin: 20px 0 6px;
+  font-size: var(--font-m);
+}
+
+.message .info {
+  margin-top: 12px;
+  color: var(--text-faint);
+  font-size: var(--font-s);
+  line-height: 1.5;
+}
+
+.message.error {
+  color: var(--danger);
+}
+
+/* Belege im Chat sind normaler Text und werden erst beim Darüberfahren markiert: in der Farbe ihrer Art, abgerundet,
+   etwas breiter als der Text und weich eingeblendet. Die Verbreiterung links und rechts ist ein Schatten ohne
+   Weichzeichner, der mit der Farbe überblendet wird. So gilt sie in jeder Zeile eines mehrzeiligen Belegs (clone),
+   und der Text rutscht nicht. */
+.citation {
+  --citation-color: var(--kind-belegt-soft);
+  --citation-widening: 3px;
+  --citation-edge-off: calc(var(--citation-widening) * -1) 0 0 0 transparent, var(--citation-widening) 0 0 0 transparent;
+  --citation-edge-on: calc(var(--citation-widening) * -1) 0 0 0 var(--citation-color), var(--citation-widening) 0 0 0 var(--citation-color);
+  position: relative;
+  padding: 2px 0;
+  border-radius: var(--highlight-radius);
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  background-color: transparent;
+  box-shadow: var(--citation-edge-off);
+  transition: background-color var(--citation-out), box-shadow var(--citation-out);
+  cursor: pointer;
+}
+
+/* Unsichtbare Trefferfläche links vom Beleg: Hover und Klick gelten schon davor, die Markierung bleibt gleich groß. */
+.citation::before {
+  content: "";
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  left: -18px;
+  width: 18px;
+}
+
+.citation[data-kind="abgeleitet"] {
+  --citation-color: var(--kind-abgeleitet-soft);
+}
+
+.citation[data-kind="hinweis"] {
+  --citation-color: var(--kind-hinweis-soft);
+}
+
+.citation[data-kind="nicht_gefunden"] {
+  --citation-color: var(--kind-nicht-gefunden-soft);
+}
+
+/* Die Markierung blendet beim Darüberfahren weich ein und beim Wegfahren etwas langsamer wieder aus. Als Transition
+   (nicht als Animation) folgt sie auch einem Wechsel mittendrin ohne Sprung. */
+.citation:hover {
+  background-color: var(--citation-color);
+  box-shadow: var(--citation-edge-on);
+  transition: background-color var(--citation-in), box-shadow var(--citation-in);
+}
+
+/* Quellen einer Marke, nach Klick darauf: eine schmale Liste im Stil der Dokumentliste, ohne Innenrand und ohne bunte Streifen,
+   die Zeilen durch feine Linien getrennt. */
+.source-picker {
+  position: fixed;
+  z-index: 10;
+  width: 300px;
+  max-height: 360px;
+  overflow-y: auto;
+  scrollbar-gutter: auto;
+  border-radius: 3px;
+  background: var(--bg);
+  box-shadow: 0 2px 10px rgba(17, 17, 17, 0.12);
+  font-size: var(--font-s);
+}
+
+.source-picker[hidden] {
+  display: none;
+}
+
+/* Die Kopfzeile ist nur der Text "Steht in:" in der Farbe der Art markiert, nicht die ganze Zeile; oben und unten gleicher Abstand */
+.source-picker div {
+  width: fit-content;
+  margin: 9px 12px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: var(--kind-belegt-soft);
+  color: var(--text);
+  font-size: var(--font-s);
+  font-weight: 500;
+}
+
+.source-picker div[data-kind="abgeleitet"] {
+  background: var(--kind-abgeleitet-soft);
+}
+
+.source-picker div[data-kind="hinweis"] {
+  background: var(--kind-hinweis-soft);
+}
+
+.source-picker div[data-kind="nicht_gefunden"] {
+  background: var(--kind-nicht-gefunden-soft);
+}
+
+.source-picker button {
+  display: block;
+  width: 100%;
+  padding: 8px 12px 9px;
+  border: 0;
+  border-top: var(--line-width) solid var(--line);
+  border-radius: 0;
+  background: none;
+  font-size: var(--font-s);
+  text-align: left;
+  transition: background-color 0.12s;
+}
+
+/* Zwischen der Kopfzeile und der ersten Quelle steht keine Linie */
+.source-picker div + button {
+  border-top: 0;
+}
+
+.source-picker button:hover {
+  background: var(--bg-hover);
+}
+
+.source-picker button:active {
+  background: var(--fill);
+}
+
+.source-picker .source-title,
+.source-picker .source-meta,
+.source-picker .source-quote {
+  display: block;
+}
+
+.source-picker .source-title {
+  color: var(--text);
+  font-size: var(--font-m);
+  font-weight: 600;
+}
+
+.source-picker .source-meta {
+  margin-top: 1px;
+  color: var(--text-muted);
+}
+
+/* das Zitat steht in höchstens zwei Zeilen, der Rest im Tooltip */
+.source-picker .source-quote {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  margin-top: 5px;
+  overflow: hidden;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+
+
+/* Leerer Chat: oben links ein kurzer Hinweis und die Farben der Belege; mit der ersten Nachricht verschwindet er */
+.messages:empty {
+  display: none;
+}
+
+.chat-empty {
+  display: none;
+  opacity: 0;
+  transition: opacity 0.2s var(--ease-out), display 0.2s allow-discrete;
+}
+
+.messages:empty + .chat-empty {
+  opacity: 1;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 24px 24px 16px;
+  font-size: var(--font-s);
+  line-height: 1.55;
+  overflow-y: auto;
+}
+
+.chat-empty p {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+/* Jede Zeile der Legende ist wie ein echter Beleg im Text markiert: Farbe der Art, abgerundet, etwas breiter als der Text */
+.chat-legend {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chat-legend strong {
+  font-weight: 600;
+}
+
+.legend-mark {
+  --mark-color: var(--kind-belegt-soft);
+  width: fit-content;
+  padding: 2px 0;
+  border-radius: var(--highlight-radius);
+  background: var(--mark-color);
+  box-shadow: -3px 0 0 var(--mark-color), 3px 0 0 var(--mark-color);
+  margin-left: 3px;
+  color: var(--text);
+  font-size: var(--font-s);
+}
+
+.legend-mark[data-kind="abgeleitet"] {
+  --mark-color: var(--kind-abgeleitet-soft);
+}
+
+.legend-mark[data-kind="hinweis"] {
+  --mark-color: var(--kind-hinweis-soft);
+}
+
+.legend-mark[data-kind="nicht_gefunden"] {
+  --mark-color: var(--kind-nicht-gefunden-soft);
+}
+
+
+
+/* --- Kontext und Eingabe --- */
+
+/* Die Eingabe läuft über die volle Breite, oben durch eine Linie getrennt: Kontext, Text, darunter die Leiste mit Aktionen */
+.question-form {
+  position: relative;
+  flex-shrink: 0;
+  background: var(--bg);
+}
+
+/* Die Linie oben läuft rechts bis an die Kante, links lässt sie den Rand der Spalte frei */
+.question-form::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 20px;
+  border-top: var(--line-width) solid var(--line);
+}
+
+.context-documents {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  max-height: 128px;
+  padding: 2px 20px 12px;
+  overflow-y: auto;
+}
+
+.context-documents:empty {
+  display: none;
+}
+
+/* Dokumente im Kontext als kleine Marken */
+.context-chip {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  height: var(--ui-height);
+  border-radius: 6px;
+  background: var(--fill);
+  font-size: var(--font-s);
+  line-height: var(--ui-height);
+}
+
+.context-chip.pinned {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.context-chip button {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 3px;
+  border: 0;
+  background: none;
+  color: inherit;
+}
+
+.context-chip .chip-name {
+  min-width: 0;
+  padding-left: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.context-chip .chip-pin,
+.context-chip .chip-remove {
+  opacity: 0.5;
+}
+
+.context-chip.pinned .chip-pin {
+  opacity: 1;
+}
+
+/* Festgehalten: der Pin ist gefüllt */
+.context-chip.pinned .chip-pin svg {
+  fill: currentColor;
+}
+
+.context-chip button:hover {
+  opacity: 1;
+}
+
+.context-chip .chip-remove {
+  padding-right: 5px;
+}
+
+.context-chip svg {
+  display: block;
+  width: var(--icon-s);
+  height: var(--icon-s);
+}
+
+.question-form textarea {
+  display: block;
+  width: 100%;
+  padding: 16px 20px 10px;
+  border: 0;
+  background: none;
+  font-size: var(--font-m);
+  line-height: 1.55;
+  resize: none;
+}
+
+.question-form textarea:focus-visible {
+  box-shadow: none;
+}
+
+.question-form textarea::placeholder {
+  color: var(--text-muted);
+}
+
+.composer-bar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+/* Feine graue Linie, damit Senden vom Textfeld abgesetzt ist */
+.composer-bar::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 20px;
+  border-top: var(--line-width) solid var(--line);
+}
+
+/* Senden: blaues Quadrat, das bis in die Ecke der Eingabe reicht */
+.composer-bar button[type="submit"] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 48px;
+  padding: 0 28px;
+  border: 0;
+  border-radius: 0;
+  background: var(--accent);
+  color: #ffffff;
+  font-size: var(--font-m);
+  font-weight: 600;
+  transition: background-color 0.12s;
+}
+
+.composer-bar button[type="submit"]:hover {
+  background: var(--accent-hover);
+}
+
+/* Beim Drücken wird Senden dunkler, statt kleiner */
+.composer-bar button[type="submit"]:active:not(:disabled):not(.is-exhausted) {
+  background: var(--accent-active);
+}
+
+.composer-bar button[type="submit"].is-exhausted:hover {
+  background: var(--text-faint);
+}
+
+.composer-bar button[type="submit"]:disabled,
+.composer-bar button[type="submit"].is-exhausted {
+  background: var(--text-faint);
+  cursor: not-allowed;
+}
+
+
+
+/* Ring des Token-Zählers: beginnt oben und füllt sich im Uhrzeigersinn, die Zahlen stehen nur im Tooltip */
+.token-counter svg {
+  transform: rotate(-90deg);
+}
+
+.token-ring-track {
+  stroke: var(--line);
+}
+
+.token-ring-value {
+  stroke: var(--accent);
+  transition: stroke-dashoffset 0.3s;
+}
+
+/* Token-Zähler unten neben Senden: Knopf mit Ring und Prozent, beim Darüberfahren graue Fläche (--fill) wie bei allen Knöpfen */
+.composer-bar .token-counter {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 30px;
+  margin-right: 12px;
+  padding: 0 8px 0 6px;
+  border: 0;
+  border-radius: var(--radius);
+  background: none;
+  color: var(--text-muted);
+  font-size: var(--font-s);
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.12s, color 0.12s;
+}
+
+.composer-bar .token-counter:hover {
+  background: var(--fill);
+  color: var(--text);
+}
+
+/* Der Ring ist ein Symbol der Stufe m (16 px) */
+.composer-bar .token-counter svg {
+  width: var(--icon-m);
+  height: var(--icon-m);
+}
+
+
+/* Verbindung zur API: ein kleiner, immer grauer Knopf neben dem Token-Ring mit einem Herzschlag. Durchgestrichen heißt keine
+   Verbindung; die Geschwindigkeit steht im Tooltip. */
+.composer-bar .connection-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius);
+  background: none;
+  color: var(--text-faint);
+  transition: background-color 0.12s, color 0.12s;
+}
+
+.composer-bar .connection-status:hover {
+  background: var(--fill);
+  color: var(--text);
+}
+
+.connection-status svg {
+  width: var(--icon-m);
+  height: var(--icon-m);
+}
+
+.signal-slash {
+  display: none;
+}
+
+.connection-status[data-state="offline"] .pulse-line {
+  opacity: 0.4;
+}
+
+.connection-status[data-state="offline"] .signal-slash {
+  display: block;
+}
+
+.connection-status[data-state="checking"] .pulse-line {
+  animation: pulse-search 0.8s ease-in-out infinite;
+}
+
+@keyframes pulse-search {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.25; }
+}
+
+
+
+/* --- Klick-Feedback über die Farbe --- */
+
+/* Elemente mit Text sinken beim Drücken nicht ein (app.js), sie werden stattdessen einen Ton dunkler */
+.chat-header #new-chat:active,
+.composer-bar .token-counter:active,
+.pdf-toolbar button:active,
+.older-versions summary:active {
+  background: var(--fill-hover);
+  color: var(--text);
+}
+
+.pdf-tool-group:not(.pdf-search-group) button:active {
+  background: var(--line-strong);
+}
+
+.context-chip:has(.chip-name:active) {
+  background: var(--fill-hover);
+}
+
+.context-chip.pinned:has(.chip-name:active) {
+  background: var(--accent-soft-active);
+}
+
+#document-list li[data-id]:has(> span:active) {
+  background: var(--fill);
+}
+
+#document-list li[data-id].open:has(> span:active) {
+  background: var(--accent-soft-active);
+}
+
+
+
+/* --- Hoverfenster --- */
+
+/* Hoverfenster: ein Stil für alle Hinweise (Kopfleisten, Kontext, Eingabe). Dunkel mit weißer Schrift und einem kleinen Pfeil
+   zum Element, ohne Schatten; erscheint kurz verzögert und gleitet leicht ein. */
+.tooltip {
+  --tooltip-bg: #1d2127;
+  position: fixed;
+  z-index: 40;
+  width: max-content;
+  max-width: 250px;
+  padding: 7px 11px;
+  border-radius: 5px;
+  background: var(--tooltip-bg);
+  color: #f4f5f7;
+  font-size: var(--font-s);
+  font-weight: 500;
+  line-height: 1.4;
+  text-wrap: balance;
+  pointer-events: none;
+  animation: tooltip-in 0.14s 0.3s both;
+}
+
+.tooltip::after {
+  content: "";
+  position: absolute;
+  left: var(--arrow-left, 50%);
+  width: 8px;
+  height: 8px;
+  border-radius: 1px;
+  background: var(--tooltip-bg);
+  transform: translateX(-50%) rotate(45deg);
+}
+
+.tooltip[data-side="above"]::after {
+  bottom: -3px;
+}
+
+.tooltip[data-side="below"]::after {
+  top: -3px;
+}
+
+.tooltip[hidden] {
+  display: none;
+}
+
+@keyframes tooltip-in {
+  from { opacity: 0; transform: translateY(3px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+
+
+/* --- Bewegung --- */
+
+/* Kleine Animationen: kurz (unter 250 ms), nur auslaufend, im Zusammenspiel mit app.js (Abschnitt Bewegung). Wer in den
+   Systemeinstellungen "Bewegung reduzieren" gewählt hat, sieht sie nicht (letzte Regel). */
+
+/* Wartezustand: drei Punkte, die nacheinander aufleuchten, daneben die Zeit */
+.typing {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 1.2em;
+  vertical-align: middle;
+}
+
+.typing i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-faint);
+  animation: typing-dot 1s ease-in-out infinite;
+}
+
+.typing i:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.typing i:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+.typing-time {
+  margin-left: 10px;
+  color: var(--text-faint);
+  font-size: var(--font-s);
+  vertical-align: middle;
+}
+
+@keyframes typing-dot {
+  0%, 60%, 100% { opacity: 0.3; transform: none; }
+  30% { opacity: 1; transform: translateY(-2px); }
+}
+
+/* Quellen-Auswahl: klappt von der Klickstelle auf und vor dem Schließen wieder zu */
+.source-picker {
+  transform-origin: top left;
+  animation: picker-in 0.14s var(--ease-out);
+}
+
+.source-picker.closing {
+  animation: picker-out 0.1s ease-in forwards;
+}
+
+@keyframes picker-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes picker-out {
+  to { opacity: 0; transform: scale(0.96); }
+}
+
+/* Marken im Kontext: wachsen beim Hinzufügen ein, schrumpfen beim Entfernen weg */
+.context-chip.is-entering {
+  animation: chip-in 0.16s var(--ease-out);
+}
+
+.context-chip.is-leaving {
+  pointer-events: none;
+  animation: chip-out 0.14s ease-in forwards;
+}
+
+@keyframes chip-in {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes chip-out {
+  to { opacity: 0; transform: scale(0.9); }
+}
+
+/* Ältere Versionen: Die Liste klappt mit sanfter Höhe auf (wo der Browser es kann), die Zeilen blenden gestaffelt ein */
+.older-versions details {
+  interpolate-size: allow-keywords;
+}
+
+.older-versions details::details-content {
+  block-size: 0;
+  overflow: hidden;
+  transition: block-size 0.22s var(--ease-out), content-visibility 0.22s allow-discrete;
+}
+
+.older-versions details[open]::details-content {
+  block-size: auto;
+}
+
+.older-versions details[open] .version-entry {
+  animation: row-in 0.2s var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 16ms);
+}
+
+@keyframes row-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Seitenleisten gleiten zu und auf (die Breite setzt app.js) */
+.documents.sliding,
+.chat.sliding {
+  min-width: 0;
+  overflow: hidden;
+  transition: width 0.22s var(--ease-out);
+}
+
+/* Senden: der Pfeil schiebt sich beim Darüberfahren vor (das Nachgeben beim Drücken gilt für alles Anklickbare, app.js) */
+.composer-bar button[type="submit"] svg {
+  transition: transform 0.15s var(--ease-out);
+}
+
+.composer-bar button[type="submit"]:hover svg {
+  transform: translateX(2px);
+}
+
+.composer-bar button[type="submit"].is-exhausted:hover svg {
+  transform: none;
+}
+
+/* PDF: Seiten blenden beim Öffnen auf */
+.pdfViewer .page {
+  animation: page-in 0.25s var(--ease-out) both;
+}
+
+@keyframes page-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0s !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

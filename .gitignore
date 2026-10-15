@@ -1,0 +1,7 @@
+.env
+.venv/
+.vscode/
+__pycache__/
+Claude.md
+documents/
+docker-compose.yml

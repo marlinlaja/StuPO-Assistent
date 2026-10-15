@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>StuPO-Assistent</title>
+  <link rel="icon" href="favicon.png?v=7" type="image/png">
+  <link rel="icon" href="favicon.ico?v=7" sizes="any">
+  <!-- Unter einem Pfad ohne abschliessenden / wuerden die relativen Pfade (styles.css, api) ins Leere zeigen -->
+  <script>
+    if (!location.pathname.endsWith("/")) {
+      location.replace(`${location.pathname}/${location.search}${location.hash}`);
+    }
+  </script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/web/pdf_viewer.css">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <aside class="documents">
+    <header class="brand">
+      <span class="brand-logo" aria-hidden="true">
+        <svg width="30" height="24" viewBox="0 0 40 30"><line x1="20" y1="1" x2="20" y2="6" stroke="#0c4fa3" stroke-width="2"/><circle cx="20" cy="3" r="2.6" fill="#ffc83d"/><rect x="4" y="6" width="32" height="22" rx="8" fill="#0c4fa3"/><rect x="8" y="10" width="24" height="14" rx="6" fill="#092052"/><rect x="12" y="13" width="4.5" height="8" rx="2.2" fill="#6ee7ff"/><rect x="23.5" y="13" width="4.5" height="8" rx="2.2" fill="#6ee7ff"/></svg>
+      </span>
+      <h1>StuPO-Assistent</h1>
+      <button class="collapse-button" data-side="left" type="button" data-tooltip="Dokumente einklappen" data-tooltip-side="below" aria-label="Dokumente einklappen"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 4L6 8l4 4"/></svg></button>
+    </header>
+    <div class="pane-body">
+      <div class="selectors">
+        <label class="field">
+          <span>Studiengang</span>
+          <select id="program-select"></select>
+        </label>
+        <label class="field">
+          <span>PO</span>
+          <select id="regulation-select"></select>
+        </label>
+      </div>
+      <ul id="document-list"></ul>
+    </div>
+  </aside>
+  <div class="divider" data-side="left"></div>
+
+  <main class="viewer">
+    <div id="pdf-viewer" class="pdf-viewer" hidden>
+      <div class="pdf-toolbar">
+        <nav id="pdf-title" class="pdf-title" aria-label="Pfad des Dokuments"></nav>
+        <div class="pdf-tool-group">
+          <button id="pdf-page-previous" type="button" data-tooltip="Vorherige Seite"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 4L6 8l4 4"/></svg></button>
+          <input id="pdf-page-input" type="number" min="1" value="1" data-tooltip="Seitenzahl">
+          <span>/ <span id="pdf-page-count">–</span></span>
+          <button id="pdf-page-next" type="button" data-tooltip="Nächste Seite"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4l4 4-4 4"/></svg></button>
+        </div>
+        <div class="pdf-tool-group">
+          <button id="pdf-zoom-out" type="button" data-tooltip="Verkleinern"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h8"/></svg></button>
+          <button id="pdf-zoom-label" class="pdf-zoom-label" type="button" data-tooltip="Zurück auf 100 %: passt genau in die Spaltenbreite">100 %</button>
+          <button id="pdf-zoom-in" type="button" data-tooltip="Vergrößern"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h8M8 4v8"/></svg></button>
+        </div>
+        <div class="pdf-tool-group pdf-search-group">
+          <input id="pdf-search" type="search" placeholder="Im PDF suchen" data-tooltip="Suchen (Strg+F)">
+          <span id="pdf-search-count" class="pdf-search-count"></span>
+          <button id="pdf-search-previous" type="button" data-tooltip="Vorheriger Treffer"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10l4-4 4 4"/></svg></button>
+          <button id="pdf-search-next" type="button" data-tooltip="Nächster Treffer"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6l4 4 4-4"/></svg></button>
+          <button id="pdf-search-toggle" type="button" data-tooltip="Suchen (Strg+F)"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="7" cy="7" r="4"/><path d="M10 10L13 13"/></svg></button>
+        </div>
+      </div>
+      <div class="pdf-stage">
+        <div class="pdf-loading" aria-hidden="true"></div>
+        <div id="pdf-container" class="pdf-container"><div id="pdf-pages" class="pdfViewer"></div></div>
+      </div>
+    </div>
+    <p id="viewer-hint" class="hint">Wähle links ein Dokument aus.</p>
+  </main>
+  <div class="divider" data-side="right"></div>
+
+  <section class="chat">
+    <header class="chat-header">
+      <button class="collapse-button" data-side="right" type="button" data-tooltip="Assistent einklappen" data-tooltip-side="below" aria-label="Assistent einklappen"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4l4 4-4 4"/></svg></button>
+      <button id="new-chat" type="button" aria-label="Neuer Chat">Neuer Chat <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg></button>
+    </header>
+    <div id="messages" class="messages"></div>
+    <div class="chat-empty">
+      <p>Antworten können Fehler enthalten, verbindlich sind nur die Originaldokumente. Ein Klick auf einen Beleg öffnet die Stelle im PDF.</p>
+      <ul class="chat-legend" aria-label="Bedeutung der Farben">
+        <li><span class="legend-mark" data-kind="belegt"><strong>belegt</strong> steht wörtlich im Dokument</span></li>
+        <li><span class="legend-mark" data-kind="abgeleitet"><strong>abgeleitet</strong> folgt aus dem Dokument, bitte prüfen</span></li>
+        <li><span class="legend-mark" data-kind="hinweis"><strong>Hinweis</strong> Einordnung ohne Quelle</span></li>
+        <li><span class="legend-mark" data-kind="nicht_gefunden"><strong>kein Zitat</strong> Quelle genannt, Zitat nicht gefunden</span></li>
+      </ul>
+    </div>
+    <form id="question-form" class="question-form">
+      <textarea id="question" rows="2" placeholder="Frage stellen …"></textarea>
+      <div id="context-documents" class="context-documents" aria-label="Dokumente im Kontext"></div>
+      <div class="composer-bar">
+        <button id="connection-status" type="button" class="connection-status" data-tooltip="Verbindung zur API" aria-label="Verbindung zur API"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="pulse-line" d="M1.5 8h3l2-4.5 3 9 2-4.5h3"/><path class="signal-slash" d="M2.5 2.5l11 11"/></svg></button>
+        <button id="token-counter" type="button" class="token-counter" data-tooltip="Tokens heute"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke-width="1.6" aria-hidden="true"><circle class="token-ring-track" cx="8" cy="8" r="6"/><circle class="token-ring-value" cx="8" cy="8" r="6" pathLength="100" stroke-dasharray="100" stroke-dashoffset="100" stroke-linecap="round"/></svg><span class="token-percent">0 %</span></button>
+        <button type="submit" aria-label="Senden">
+          Senden <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+        </button>
+      </div>
+    </form>
+  </section>
+  <button id="expand-left" class="expand-button" data-side="left" type="button" data-tooltip="Dokumente einblenden" data-tooltip-side="below" aria-label="Dokumente einblenden" hidden><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4l4 4-4 4"/></svg></button>
+  <button id="expand-right" class="expand-button" data-side="right" type="button" data-tooltip="Assistent einblenden" data-tooltip-side="below" aria-label="Assistent einblenden" hidden><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 4L6 8l4 4"/></svg></button>
+  <div id="source-picker" class="source-picker" hidden></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/marked@15.0.12/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.4.16/dist/purify.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/web/pdf_viewer.js"></script>
+  <script src="config.js"></script>
+  <script src="pdf-viewer.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

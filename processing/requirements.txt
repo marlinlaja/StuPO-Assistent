@@ -1,0 +1,5 @@
+requests==2.32.3
+psycopg[binary]==3.3.6
+pymupdf==1.28.2
+py3langid==0.4.0
+tiktoken==0.12.0

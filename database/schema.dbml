@@ -1,0 +1,309 @@
+// PO- und Modulhandbuch-Assistent – Dokumentenschema (Planungsstand)
+// Äquivalent zu schema.sql – Änderungen immer in beiden Dateien nachziehen.
+
+Enum dokument_typ {
+  uebergreifende_po
+  fachspezifische_po
+  modulhandbuch
+}
+
+Enum dokument_status {
+  neu       [note: 'PDF im Dokumentenordner gefunden']
+  parsed    [note: 'Seiten gelesen']
+  processed [note: 'Module, Chunks (mit Tokenzahl) und Inhaltsverzeichnis gebildet']
+  final     [note: 'Embedding berechnet, fertig für den Assistenten']
+  translation [note: 'englische Fassung: nur geparst, wird nicht weiterverarbeitet']
+}
+
+Enum sprache {
+  deutsch
+  englisch
+}
+
+Enum modul_turnus {
+  wintersemester
+  sommersemester
+  jedes_semester [note: 'Wintersemester/Sommersemester']
+  unregelmaessig
+}
+
+Enum modul_niveau {
+  bachelor
+  master
+  bachelor_master
+}
+
+Enum nachricht_rolle {
+  nutzer
+  assistent
+}
+
+Table dokument {
+  id                  bigint [pk, increment]
+  typ                 dokument_typ [not null]
+
+  titel               text [not null]
+  sprache             sprache [not null]
+  semester            text [note: 'Format JJJJ-sommersemester | JJJJ-wintersemester, sortierbar; Wintersemester 2020/21 = 2020-wintersemester; Pflicht bei modulhandbuch, sonst NULL']
+  erschienen_am       date [note: 'Prüfungsordnungen: Erscheinungsdatum im Archiv der amtlichen Bekanntmachungen; Modulhandbücher: Erstellungsdatum der PDF (Metadaten), dort gilt für die Version semester']
+  inhaltsverzeichnis  jsonb [note: 'ein Eintrag pro Abschnitt in Dokumentreihenfolge: {ebene, titel, chunk_von, chunk_bis, seite_von, seite_bis, tokens}; ebene 1 = oberste Ebene (PO: Teil/Anlage/§, Modulhandbuch: Einleitung/Modulbereich); chunk_von..chunk_bis = chunk.position des Abschnitts inkl. Unterabschnitten, zum Nachladen des ganzen Abschnitts; tokens = Summe von chunk.tokenanzahl']
+
+  importiert_am       timestamptz [not null, default: `now()`]
+  dateiname           text [not null, note: 'Name der PDF, nur zur Anzeige']
+  sha256              char(64) [not null, unique, note: 'CHECK ~ ^[0-9a-f]{64}$']
+  pdf                 bytea [not null, note: 'Inhalt der PDF-Datei; Backend und Processing lesen sie von hier, es gibt keinen gemeinsamen Dokumentenordner']
+
+  status              dokument_status [not null, default: 'neu', note: 'zuletzt abgeschlossener Schritt des Processing: neu -> parsed -> processed -> final, englische Fassungen enden nach dem Parsen mit translation; zum erneuten Verarbeiten auf einen früheren Status zurücksetzen']
+  fehler              text [note: 'Meldung des fehlgeschlagenen Schritts; solange gesetzt, verarbeitet das Processing das Dokument nicht weiter, zum erneuten Versuch auf NULL setzen']
+
+
+  indexes {
+    (id, typ) [unique, note: 'Ziel des Modul-FK']
+    (id, sprache) [unique, note: 'Ziel des Chunk-FK']
+  }
+
+  Note: '''
+    CHECK semester ~ ^[0-9]{4}-(sommersemester|wintersemester)$
+    CHECK (typ = modulhandbuch) = (semester IS NOT NULL)
+  '''
+}
+
+Table seite {
+  dokument_id   bigint [not null]
+  seitenzahl    integer [not null, note: 'PDF-Index ab 1, CHECK >= 1']
+  rohtext       text [not null]
+  zeichenanzahl integer [note: 'GENERATED ALWAYS AS (char_length(rohtext)) STORED']
+  layout        jsonb [note: 'pro Zeile von rohtext (split auf \n) {x, fett[, tabelle]}: linker Rand in PDF-Punkten, ob fett, Index in tabellen']
+  tabellen      jsonb [note: 'erkannte Tabellen der Seite als Markdown (nur Prüfungsordnungen)']
+
+  indexes {
+    (dokument_id, seitenzahl) [pk]
+  }
+}
+
+Table modul {
+  id                               bigint [pk, increment]
+  handbuch_id                      bigint [not null]
+  dokument_typ                     dokument_typ [not null, default: 'modulhandbuch', note: 'CHECK = modulhandbuch']
+  kennung                          text [not null]
+  version                          integer [note: 'NULL, wenn im Handbuch keine Version steht']
+  titel                            text [not null]
+
+  modulbereich                     text [not null, note: 'unterster Bereich, Name wie im Handbuch; genau ein Bereich: modulbereich = \'Chemie\'']
+  modulbereich_pfad                text [not null, note: 'Pfad von der obersten Ebene bis zum Modulbereich, getrennt mit " > ", z. B. "Wahlpflichtbereich > Module im Anwendungsbereich > Chemie"; ein Bereich mit allen Unterbereichen: modulbereich_pfad ILIKE \'%Anwendungsbereich%\'']
+  pflichtstatus                    text [note: 'wie im Handbuch, z. B. Pflichtfach oder Wahlpflichtfach; mit = filtern, nicht mit ILIKE']
+  niveau                           modul_niveau
+  empf_fachsemester_wintersemester integer [note: 'CHECK >= 1']
+  empf_fachsemester_sommersemester integer [note: 'CHECK >= 1']
+
+  dauer_semester                   integer [note: 'CHECK >= 1; NULL = unbekannt oder „mehrere“']
+  turnus                           modul_turnus [note: 'jedes_semester = Wintersemester und Sommersemester. Sagt, wann das Modul angeboten werden kann, nicht dass es dann sicher stattfindet, vor allem bei Wahl- und Wahlpflichtmodulen']
+  sprache                          "sprache[]" [note: 'z. B. {deutsch,englisch}']
+  gueltig_von                      text [not null, note: 'Semesterformat wie dokument.semester']
+  gueltig_bis                      text [note: 'Semesterformat wie dokument.semester; NULL = unbefristet']
+
+  ects                             numeric(4,1) [note: 'CHECK >= 0']
+  sws                              numeric [note: 'CHECK >= 0']
+  stunden_gesamt                   numeric [note: 'CHECK >= 0']
+  stunden_praesenz                 numeric [note: 'CHECK >= 0']
+  stunden_selbststudium            numeric [note: 'CHECK >= 0']
+  veranstaltungen                  text [note: 'Prüfungs- und Angebotsknoten (Prüfung, Übung, Vorlesung …) als lesbarer Text, eine Zeile pro Veranstaltung mit Fachsemester, ECTS und SWS; Beschriftung in der Sprache des Handbuchs']
+
+  modulverantwortung               text
+
+  inhalt                           text
+  lernziele                        text
+  lehr_lernmethoden                text
+  literatur                        text
+
+  teilnahmebedingungen             text
+  empf_voraussetzungen             text
+
+  pruefungsform                    text
+  pruefungsdauer_min               text [note: 'Minuten als Text wie im Handbuch, z. B. "90", "90-120 min"']
+  pruefungsbedingungen             text
+  zulassungsvoraussetzung          text
+
+  sonstiges                        text
+
+  seite_von                        integer [not null]
+  seite_bis                        integer [not null, note: 'CHECK >= seite_von']
+
+  indexes {
+    (handbuch_id, id) [unique, note: 'Ziel des Chunk-FK, deckt auch Suche nach handbuch_id ab']
+    (handbuch_id, kennung, version, modulbereich) [unique, note: 'ein Modul kann in mehreren Modulbereichen stehen; SQL: UNIQUE NULLS NOT DISTINCT, damit Module ohne Version nicht doppelt vorkommen']
+    kennung
+  }
+
+  Note: '''
+    CHECK gueltig_von, gueltig_bis ~ ^[0-9]{4}-(sommersemester|wintersemester)$
+    CHECK gueltig_bis >= gueltig_von
+    Query „gültig im Semester X“:
+      gueltig_von <= X AND (gueltig_bis IS NULL OR gueltig_bis >= X)
+
+    LLM-Zugriff über View modul_leseansicht:
+      SELECT alle Spalten außer handbuch_id, dokument_typ
+      FROM modul WHERE handbuch_id = current_setting('app.handbuch_id')::bigint
+    - Backend setzt vor jeder LLM-Query SET app.handbuch_id = <id>
+    - LLM-Rolle llm_leser: eigener Login (database/leserolle.sh), read-only, statement_timeout, USAGE auf Schema public, nur SELECT auf modul_leseansicht
+    - Backend gibt dem LLM den Bereichsbaum (modulbereich_pfad) und die Werte von pflichtstatus mit
+    - eine Zeile pro Modulbereich, je Bereich mit eigenen Werten (z. B. ECTS):
+      Zeilen nie über die Kennung zusammenführen, Module zählen mit count(DISTINCT kennung)
+  '''
+}
+
+Table chunk {
+  id               bigint [pk, increment]
+  dokument_id      bigint [not null]
+  modul_id         bigint [note: 'NULL, wenn der Chunk zu keinem Modul gehört']
+  position         integer [not null, note: 'CHECK >= 0']
+  abschnitt        text [note: 'Pfad des Abschnitts (Titel getrennt mit › ), steht auch als erste Zeile in text']
+
+  start_seite      integer [not null]
+  start_offset     integer [not null, note: 'Zeichenposition in seite.rohtext der start_seite, CHECK >= 0']
+  ende_seite       integer [not null, note: 'CHECK >= start_seite']
+  ende_offset      integer [not null, note: 'Zeichenposition in seite.rohtext der ende_seite, CHECK >= 0']
+
+  text             text [not null]
+  sprache          sprache [not null, note: 'immer gleich dokument.sprache (über FK erzwungen)']
+  tokenanzahl      integer [note: 'CHECK >= 0 – Tokens von text (tiktoken cl100k_base, Näherung für alle Modelle), ohne Chat-Format']
+  suchvektor       tsvector [note: 'GENERATED ALWAYS AS (to_tsvector(suchkonfiguration(sprache), text)) STORED, GIN-Index']
+
+  embedding_modell text [note: 'z. B. jinaai/jina-embeddings-v5-text-nano (Embedding API, input_type document)']
+  embedding        vector(768) [note: 'HNSW (vector_cosine_ops)']
+
+  indexes {
+    (dokument_id, position) [unique]
+    modul_id
+  }
+
+  Note: '''
+    CHECK ende_seite > start_seite OR ende_offset > start_offset
+    CHECK (embedding IS NULL) = (embedding_modell IS NULL)
+    suchkonfiguration(sprache): IMMUTABLE-Funktion, deutsch → german, englisch → english
+  '''
+}
+
+Table studiengang {
+  id        bigint [pk, increment]
+  name      text [not null]
+  abschluss text [not null, note: 'z. B. B.Sc., M.Sc., B.A.']
+
+  indexes {
+    (name, abschluss) [unique]
+  }
+}
+
+Table pruefungsordnung {
+  id             bigint [pk, increment]
+  studiengang_id bigint [not null]
+  jahr           integer [not null, note: 'z. B. 2022 für „PO 2022“']
+
+  filter_upo           text [not null, note: 'Suchtext (URL-kodiert) für die Übergreifende Prüfungsordnung (ÜPO) im Archiv der amtlichen Bekanntmachungen, z. B. %DCbergreifende+bachelor+master']
+  filter_po            text [not null, note: 'Suchtext (URL-kodiert) für die fachspezifische Prüfungsordnung (PO) im Archiv der amtlichen Bekanntmachungen, z. B. Informatik+2022+Bachelor']
+  filter_modulhandbuch text [not null, note: 'Studiengangsnummer (pStpStpNr) des Modulhandbuchs in RWTHonline, z. B. 1900']
+
+  indexes {
+    (studiengang_id, jahr) [unique]
+  }
+}
+
+Table zugehoerig {
+  pruefungsordnung_id bigint [not null]
+  dokument_id         bigint [not null]
+
+  indexes {
+    (pruefungsordnung_id, dokument_id) [pk]
+    dokument_id
+  }
+
+  Note: 'n:m – Dokumente, die zu einer Prüfungsordnung gehören'
+}
+
+Table nutzer {
+  id          bigint [pk, increment]
+  erstellt_am timestamptz [not null, default: `now()`]
+}
+
+Table sitzung {
+  nutzer_id      bigint [pk]
+  erstellt_am    timestamptz [not null, default: `now()`]
+  zuletzt_aktiv  timestamptz [not null, default: `now()`]
+  token_tag      date [not null, default: `(now() AT TIME ZONE 'Europe/Berlin')::date`]
+  eingabe_tokens bigint [not null, default: 0, note: 'CHECK >= 0']
+  ausgabe_tokens bigint [not null, default: 0, note: 'CHECK >= 0']
+
+  Note: 'Eine Sitzung je Nutzer mit dem Tagesverbrauch an Tokens. Der Verbrauch gilt für den Tag token_tag (Zeitzone Europe/Berlin). Mit Mitternacht beginnt der Zähler bei null: Liegt token_tag vor heute, zählt der Verbrauch als 0 und wird beim nächsten Schreiben zurückgesetzt, ein nächtlicher Job ist nicht nötig.'
+}
+
+Table chat {
+  id              bigint [pk, increment]
+  nutzer_id       bigint [not null]
+  zusammenfassung text
+  erstellt_am     timestamptz [not null, default: `now()`]
+
+  indexes {
+    (nutzer_id, erstellt_am) [note: 'Chatliste eines Nutzers']
+  }
+}
+
+Table nachricht {
+  id          bigint [pk, increment]
+  chat_id     bigint [not null]
+  position    integer [not null, note: 'CHECK >= 0']
+  rolle       nachricht_rolle [not null]
+  inhalt      jsonb [not null]
+  erstellt_am timestamptz [not null, default: `now()`]
+
+  indexes {
+    (chat_id, position) [unique]
+    (id, rolle) [unique, note: 'Ziel des Zitat-FK']
+  }
+}
+
+Table angehaengt {
+  chat_id     bigint [not null]
+  dokument_id bigint [not null]
+
+  indexes {
+    (chat_id, dokument_id) [pk]
+    dokument_id
+  }
+
+  Note: 'n:m – an einen Chat angehängte Dokumente'
+}
+
+Table zitiert {
+  nachricht_id    bigint [not null]
+  nachricht_rolle nachricht_rolle [not null, default: 'assistent', note: 'CHECK = assistent']
+  chunk_id        bigint [not null]
+  rang            integer [not null, note: 'Reihenfolge der Quellen, CHECK >= 1']
+  aehnlichkeit    real [note: 'Score der Vektorsuche']
+
+  indexes {
+    (nachricht_id, chunk_id) [pk]
+    (nachricht_id, rang) [unique]
+    chunk_id
+  }
+
+  Note: 'n:m – von einer Antwort des Assistenten zitierte Chunks'
+}
+
+Ref: seite.dokument_id > dokument.id [delete: cascade]
+Ref: modul.(handbuch_id, dokument_typ) > dokument.(id, typ) [delete: cascade]
+Ref: modul.(handbuch_id, seite_von) > seite.(dokument_id, seitenzahl)
+Ref: modul.(handbuch_id, seite_bis) > seite.(dokument_id, seitenzahl)
+Ref: chunk.(dokument_id, sprache) > dokument.(id, sprache) [delete: cascade, update: cascade]
+Ref: chunk.(dokument_id, start_seite) > seite.(dokument_id, seitenzahl)
+Ref: chunk.(dokument_id, ende_seite) > seite.(dokument_id, seitenzahl)
+Ref: chunk.(dokument_id, modul_id) > modul.(handbuch_id, id) [delete: set null] // SQL: ON DELETE SET NULL (modul_id) – nur modul_id nullen, nicht dokument_id
+Ref: pruefungsordnung.studiengang_id > studiengang.id [delete: cascade]
+Ref: zugehoerig.pruefungsordnung_id > pruefungsordnung.id [delete: cascade]
+Ref: zugehoerig.dokument_id > dokument.id [delete: cascade]
+Ref: sitzung.nutzer_id - nutzer.id [delete: cascade]
+Ref: chat.nutzer_id > nutzer.id [delete: cascade]
+Ref: nachricht.chat_id > chat.id [delete: cascade]
+Ref: angehaengt.chat_id > chat.id [delete: cascade]
+Ref: angehaengt.dokument_id > dokument.id [delete: cascade]
+Ref: zitiert.(nachricht_id, nachricht_rolle) > nachricht.(id, rolle) [delete: cascade]
+Ref: zitiert.chunk_id > chunk.id [delete: cascade]
