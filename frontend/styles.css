@@ -1828,6 +1828,29 @@ body.resizing .pdf-viewer {
   to { opacity: 1; }
 }
 
+/* Beim Laden blenden nur die Texte nacheinander ein: erst Opacity, dazu kaum Bewegung und ein Hauch Unschärfe */
+.brand h1,
+.field > span,
+.chat-empty p,
+.chat-legend li {
+  animation: text-in 0.7s var(--ease-out) backwards;
+  animation-delay: calc(0.1s + var(--reveal, 0) * 70ms);
+}
+
+.brand h1 { --reveal: 0; }
+.field:nth-child(1) > span { --reveal: 1; }
+.field:nth-child(2) > span { --reveal: 2; }
+.chat-empty p { --reveal: 3; }
+.chat-legend li:nth-child(1) { --reveal: 4; }
+.chat-legend li:nth-child(2) { --reveal: 5; }
+.chat-legend li:nth-child(3) { --reveal: 6; }
+.chat-legend li:nth-child(4) { --reveal: 7; }
+
+@keyframes text-in {
+  from { opacity: 0; transform: translateY(2px); filter: blur(1px); }
+  to { opacity: 1; transform: none; filter: none; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
