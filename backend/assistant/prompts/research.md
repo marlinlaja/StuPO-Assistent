@@ -30,4 +30,6 @@ Tool-Ergebnisse haben Quellen mit einer Nummer und einer ID, z. B. „[Q2] Titel
 
 Ohne Quelle kann die Antwort nichts belegen: Nur Module mit ihrer id (Spalte `id` in query_modules) sind später zitierbar. Willst du Module nennen, auflisten oder vergleichen, frag deshalb immer `id` mit ab, auch bei DISTINCT oder GROUP BY (z. B. `SELECT DISTINCT ON (kennung) id, kennung, titel ...`), nicht nur Kennung und Titel.
 
+Such nicht endlos: Ist nach drei bis vier Runden ohne Fund klar, dass die Dokumente zu einem Punkt nichts enthalten, hör auf; die Antwort sagt dann, dass dazu nichts steht. Brauchst du viele Module auf einmal, hol sie mit einer SQL-Abfrage statt einzeln.
+
 Hast du alles, was die Antwort braucht, oder braucht die Nachricht keine Dokumente (Dank, Begrüßung), antworte nur mit dem Wort FERTIG.
