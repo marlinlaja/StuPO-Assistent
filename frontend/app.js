@@ -290,7 +290,7 @@ async function loadCatalog() {
     programs = catalog.studiengaenge;
     catalogDocuments = catalog.dokumente;
   } catch (error) {
-    showCatalogError();
+    showDocumentHint("Dokumente nicht verfügbar");
     return;
   }
 
@@ -594,35 +594,6 @@ function createTextItem(className, text) {
 
 function showDocumentHint(text) {
   documentList.innerHTML = `<li class="hint">${text}</li>`;
-}
-
-
-
-// Ohne Katalog gibt es nichts zu wählen: Auswahl sperren und mit einem Knopf neu laden lassen
-function showCatalogError() {
-  programSelect.disabled = true;
-  regulationSelect.disabled = true;
-
-  const state = document.createElement("li");
-  state.className = "catalog-error";
-
-  const title = createTextSpan("catalog-error-title", "Dokumente nicht verfügbar");
-  const text = createTextSpan("catalog-error-text", "Die Dokumente konnten gerade nicht geladen werden. Bitte versuche es gleich noch einmal.");
-  const retryButton = document.createElement("button");
-  retryButton.type = "button";
-  retryButton.textContent = "Erneut versuchen";
-  retryButton.addEventListener("click", retryCatalog);
-
-  state.append(title, text, retryButton);
-  documentList.replaceChildren(state);
-}
-
-
-
-async function retryCatalog() {
-  programSelect.disabled = false;
-  regulationSelect.disabled = false;
-  await loadCatalog();
 }
 
 
