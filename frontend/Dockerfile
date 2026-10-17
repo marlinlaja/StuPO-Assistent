@@ -3,7 +3,7 @@ FROM nginx:alpine
 # Adresse des Backends im Docker-Netzwerk, ohne abschliessenden /
 ENV BACKEND_URL=http://backend:8000
 
-COPY index.html config.js styles.css app.js pdf-viewer.js favicon.svg favicon.png favicon.ico /usr/share/nginx/html/
+COPY index.html config.js styles.css app.js pdf-viewer.js favicon.svg favicon.ico apple-touch-icon.png /usr/share/nginx/html/
 COPY fonts/ /usr/share/nginx/html/fonts/
 COPY nginx.conf.template /etc/nginx/templates/default.conf.template
 
