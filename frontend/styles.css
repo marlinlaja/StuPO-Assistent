@@ -1828,27 +1828,42 @@ body.resizing .pdf-viewer {
   to { opacity: 1; }
 }
 
-/* Beim Laden blenden nur die Texte nacheinander ein: erst Opacity, dazu kaum Bewegung und ein Hauch Unschärfe */
-.brand h1,
-.field > span,
-.chat-empty p,
-.chat-legend li {
-  animation: text-in 0.7s var(--ease-out) backwards;
-  animation-delay: calc(0.1s + var(--reveal, 0) * 70ms);
+/* Beim Laden blenden alle Texte über Opacity ein. Die Klasse intro liegt nur auf dem body, solange die Seite startet (app.js),
+   so läuft die Animation nicht bei jedem Neuzeichnen der Dokumentliste. */
+.intro .brand h1,
+.intro .field > span,
+.intro .chat-header #new-chat,
+.intro #document-list > li,
+.intro .pdf-title,
+.intro .pdf-tool-group,
+.intro .viewer > .hint,
+.intro .chat-empty p,
+.intro .chat-legend li,
+.intro .question-form textarea::placeholder,
+.intro .composer-bar {
+  animation: text-fade-in 0.5s ease-out backwards;
+  animation-delay: calc(var(--reveal, 0) * 40ms);
 }
 
-.brand h1 { --reveal: 0; }
-.field:nth-child(1) > span { --reveal: 1; }
-.field:nth-child(2) > span { --reveal: 2; }
-.chat-empty p { --reveal: 3; }
-.chat-legend li:nth-child(1) { --reveal: 4; }
-.chat-legend li:nth-child(2) { --reveal: 5; }
-.chat-legend li:nth-child(3) { --reveal: 6; }
-.chat-legend li:nth-child(4) { --reveal: 7; }
+.intro .brand h1 { --reveal: 0; }
+.intro .field:nth-child(1) > span { --reveal: 1; }
+.intro .field:nth-child(2) > span { --reveal: 2; }
+.intro #document-list > li { --reveal: 3; }
+.intro .pdf-title,
+.intro .pdf-tool-group,
+.intro .viewer > .hint { --reveal: 2; }
+.intro .chat-header #new-chat { --reveal: 2; }
+.intro .chat-empty p { --reveal: 3; }
+.intro .chat-legend li:nth-child(1) { --reveal: 4; }
+.intro .chat-legend li:nth-child(2) { --reveal: 5; }
+.intro .chat-legend li:nth-child(3) { --reveal: 6; }
+.intro .chat-legend li:nth-child(4) { --reveal: 7; }
+.intro .question-form textarea::placeholder,
+.intro .composer-bar { --reveal: 8; }
 
-@keyframes text-in {
-  from { opacity: 0; transform: translateY(2px); filter: blur(1px); }
-  to { opacity: 1; transform: none; filter: none; }
+@keyframes text-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @media (prefers-reduced-motion: reduce) {

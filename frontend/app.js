@@ -28,6 +28,7 @@ const DOCUMENT_GROUPS = [
   { type: "fachspezifische_po", label: "Fachspezifische PO", abbreviation: "PO" },
   { type: "modulhandbuch", label: "Modulhandbuch", abbreviation: "MHB" },
 ];
+const INTRO_DURATION_MS = 800;
 const PICKER_WIDTH = 310;
 // Titel der Prüfungsordnungen: "... - 3. Änderungsordnung (Gesamtfassung), 2024-116" oder "... - Ordnung, 2022-020"
 const AMENDMENT_IN_TITLE = /(\d+)\. Änderungsordnung/;
@@ -232,6 +233,12 @@ async function start() {
   loadTokenUsage();
   checkConnection();
   await loadCatalog();
+  finishIntro();
+}
+
+// Nach dem ersten Aufbau läuft keine Einblend-Animation mehr
+function finishIntro() {
+  setTimeout(() => document.body.classList.remove("intro"), INTRO_DURATION_MS);
 }
 
 // Die Linien der Dokumentliste enden so weit vor dem Rand wie die der Eingabe, die Scrollbar zählt zum Abstand
