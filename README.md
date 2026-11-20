@@ -14,7 +14,7 @@ Ich wollte etwas mit angewandter KI bauen, aber nicht als Demo ohne Nutzer, sond
 
 Warum nicht einfach ChatGPT oder Claude? Wenn man die richtigen Dokumente selbst heraussucht und hochlädt, funktionieren die großen Modelle teils sogar besser. In meiner Anwendung ist der Aufwand für Nutzer aber kleiner. Man wählt den Studiengang aus und stellt seine Frage. Die Dokumente liegen schon im Kontext, und jede Aussage lässt sich direkt im PDF nachprüfen.
 
-Aktuell sind Bachelor und Master Informatik hinterlegt. Weitere Studiengänge lassen sich ohne Codeänderung sehr einfach ergänzen, mit einem Eintrag in der Datenbank und einem Filter für den Crawler. Das habe ich bisher aber nur stichprobenartig getestet.
+Aktuell sind Bachelor und Master Informatik hinterlegt. Weitere Studiengänge lassen sich ohne Codeänderung sehr einfach ergänzen, mit einem Eintrag in der Datenbank und einem Filter für den Crawler.
 
 
 
